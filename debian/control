@@ -1,0 +1,38 @@
+Source: python-gssapi
+Section: python
+Priority: optional
+Maintainer: Robbie Harwood (work) <rharwood@redhat.com>
+Uploaders: 
+Standards-Version: 3.9.6
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.3
+Homepage: https://github.com/pythongssapi/python-gssapi
+Build-Depends: cython, cython3,
+               debhelper (>= 9), dh-python, quilt,
+               python-all-dev, python3-all-dev,
+               python-setuptools, python3-setuptools,
+               libkrb5-dev
+
+Package: python-gssapi
+Architecture: any
+Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Provides: ${python:Provides}
+Description: Python interface to GSSPI
+ Python Bindings for GSSAPI.  These bindings are for both RFC 2743/2744 and
+ many extensions.  They are native bindings produced using Cython.
+ .
+ Available extensions will vary based on what your GSSAPI implementation
+ supports; see package documentation for a detailed list of what is available.
+
+Package: python3-gssapi
+Architecture: any
+Depends: ${python3:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Provides: ${python3:Provides}
+Suggests: python-gssapi-doc
+Description: Python 3 interface to GSSAPI
+ Python3 Bindings for GSSAPI.  These bindings are for both RFC 2743/2744 and
+ many extensions.  They are native bindings produced using Cython.
+ .
+ Available extensions will vary based on what your GSSAPI implementation
+ supports; see package documentation for a detailed list of what is available.
+
