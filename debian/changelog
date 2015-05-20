@@ -1,0 +1,5 @@
+python-gssapi (1.1.1-1) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Robbie Harwood (work) <rharwood@redhat.com>  Wed, 20 May 2015 15:00:30 -0400
