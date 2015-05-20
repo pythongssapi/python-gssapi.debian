@@ -1,0 +1,13 @@
+This package is managed with gbp.
+
+If you are not familiar with this workflow, treat it as a standard quilt
+package in git.
+
+
+Patches:
+
+Patches may be submitted to github (preferred), or emailed to me.  If you are
+familiar with quilt, please use quilt-friendly patches; otherwise, I will take
+care of it.
+
+ -- Robbie Harwood <Robbie Harwood (work) <rharwood@redhat.com>>, Wed, 20 May 2015 17:01:18 -0400
