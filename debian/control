@@ -11,6 +11,11 @@ Build-Depends: cython, cython3,
                debhelper (>= 9), dh-python, quilt,
                python-all-dev, python3-all-dev,
                python-setuptools, python3-setuptools,
+               python-flake8, python3-flake8,
+               python-nose, python3-nose,
+               python-nose-parameterized, python3-nose-parameterized,
+               python-six, python3-six,
+               python-tox, virtualenv,
                libkrb5-dev
 
 Package: python-gssapi
