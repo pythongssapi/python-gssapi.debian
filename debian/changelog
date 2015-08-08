@@ -1,5 +1,6 @@
-python-gssapi (1.1.1-1) UNRELEASED; urgency=medium
+python-gssapi (1.1.2-1) unstable; urgency=medium
 
-  * Initial release. (Closes: #XXXXXX)
+  * Initial release. (Closes: #794980: ITP: python-gssapi, python3-
+    gssapi -- Python & Python3 interfaces to GSSAPI)
 
- -- Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>  Wed, 20 May 2015 15:00:30 -0400
+ -- Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>  Wed, 08 Aug 2015 18:38:30 -0400

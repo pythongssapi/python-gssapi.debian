@@ -2,7 +2,7 @@ Source: python-gssapi
 Section: python
 Priority: optional
 Maintainer: Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>
-Uploaders: 
+Uploaders: Dafydd Harries <daf@debian.org>
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.3
