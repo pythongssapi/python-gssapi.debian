@@ -1,7 +1,7 @@
 Source: python-gssapi
 Section: python
 Priority: optional
-Maintainer: Robbie Harwood (work) <rharwood@redhat.com>
+Maintainer: Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>
 Uploaders: 
 Standards-Version: 3.9.6
 X-Python-Version: >= 2.7

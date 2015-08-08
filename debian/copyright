@@ -1,6 +1,6 @@
 Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
 Name: python-gssapi
-Maintainer: Robbie Harwood (work) <rharwood@redhat.com>
+Maintainer: Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>
 Source: https://github.com/pythongssapi/python-gssapi
 
 Copyright: 2014 The Python GSSAPI Team
