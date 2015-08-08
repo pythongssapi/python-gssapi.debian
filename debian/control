@@ -22,7 +22,7 @@ Package: python-gssapi
 Architecture: any
 Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
 Provides: ${python:Provides}
-Description: Python interface to GSSPI
+Description: Python interface to GSSAPI
  Python Bindings for GSSAPI.  These bindings are for both RFC 2743/2744 and
  many extensions.  They are native bindings produced using Cython.
  .
