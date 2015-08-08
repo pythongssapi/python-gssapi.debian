@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from setuptools import setup
+from setuptools import Distribution
 from setuptools.command.sdist import sdist
 from setuptools.extension import Extension
 import platform
@@ -109,6 +110,41 @@ class sdist_gssapi(sdist):
             os.remove(SKIP_CYTHON_FILE)
 
 
+DONT_CYTHONIZE_FOR = ('clean',)
+
+
+class GSSAPIDistribution(Distribution, object):
+    def run_command(self, command):
+        self._last_run_command = command
+        Distribution.run_command(self, command)
+
+    @property
+    def ext_modules(self):
+        if SOURCE_EXT != 'pyx':
+            return getattr(self, '_ext_modules', None)
+
+        if getattr(self, '_ext_modules', None) is None:
+            return None
+
+        if getattr(self, '_last_run_command', None) in DONT_CYTHONIZE_FOR:
+            return self._ext_modules
+
+        if getattr(self, '_cythonized_ext_modules', None) is None:
+            self._cythonized_ext_modules = cythonize(self._ext_modules)
+
+        return self._cythonized_ext_modules
+
+    @ext_modules.setter
+    def ext_modules(self, mods):
+        self._cythonized_ext_modules = None
+        self._ext_modules = mods
+
+    @ext_modules.deleter
+    def ext_modules(self):
+        del self._ext_modules
+        del self._cythonized_ext_modules
+
+
 # detect support
 def main_file(module):
     return Extension('gssapi.raw.%s' % module,
@@ -123,6 +159,8 @@ ENUM_EXTS = []
 
 def extension_file(module, canary):
     if ENABLE_SUPPORT_DETECTION and not hasattr(GSSAPI_LIB, canary):
+        print('Skipping the %s extension because it '
+              'is not supported by your GSSAPI implementation...' % module)
         return None
     else:
         enum_ext_path = 'gssapi/raw/_enum_extensions/ext_%s.%s' % (module,
@@ -161,9 +199,6 @@ def gssapi_modules(lst):
     # add in any present enum extension files
     res.extend(ENUM_EXTS)
 
-    if SOURCE_EXT == 'pyx':
-        res = cythonize(res)
-
     return res
 
 long_desc = re.sub('\.\. role:: \w+\(code\)\s*\n\s*.+', '',
@@ -173,7 +208,7 @@ long_desc = re.sub('\.\. role:: \w+\(code\)\s*\n\s*.+', '',
 
 setup(
     name='gssapi',
-    version='1.1.1',
+    version='1.1.2',
     author='The Python GSSAPI Team',
     author_email='sross@redhat.com',
     packages=['gssapi', 'gssapi.raw', 'gssapi.raw._enum_extensions',
@@ -195,6 +230,7 @@ setup(
         'Topic :: Security',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
+    distclass=GSSAPIDistribution,
     cmdclass={'sdist': sdist_gssapi},
     ext_modules=gssapi_modules([
         main_file('misc'),
@@ -227,8 +263,5 @@ setup(
         'enum34',
         'decorator',
         'six'
-    ],
-    tests_require=[
-        'tox'
     ]
 )
