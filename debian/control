@@ -15,7 +15,6 @@ Build-Depends: cython, cython3,
                python-nose, python3-nose,
                python-nose-parameterized, python3-nose-parameterized,
                python-six, python3-six,
-               python-tox, virtualenv,
                libkrb5-dev
 
 Package: python-gssapi
