@@ -21,6 +21,9 @@ Python-GSSAPI provides both low-level and high level wrappers around the GSSAPI
 C libraries.  While it focuses on the Kerberos mechanism, it should also be
 useable with other GSSAPI mechanisms.
 
+Documentation for the latest released version can be found at
+`https://pythonhosted.org/gssapi <https://pythonhosted.org/gssapi>`_.
+
 Requirements
 ============
 
@@ -33,6 +36,8 @@ Basic
 * a C compiler (such as GCC)
 
 * either the `enum34` Python package or Python 3.4+
+
+* the `six` and `decorator` python packages
 
 Compiling from Scratch
 ----------------------
@@ -58,6 +63,8 @@ Easy Way
 
 From the Git Repo
 -----------------
+
+After being sure to install all the requirements,
 
 .. code-block:: bash
 
