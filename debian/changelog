@@ -1,3 +1,14 @@
+python-gssapi (1.2.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Drop enum34 patch that has merged upstream
+  * Remove build dependency on python-tox and virtualenv
+  * Fix X-Python3-Version to reflect enum34 state
+  * Fix lintian false positive ("tEH" in binary)
+  * Bump standards version to 3.9.7
+
+ -- Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>  Fri, 15 Apr 2016 16:09:28 -0400
+
 python-gssapi (1.1.3-2) unstable; urgency=high
 
   * Rebuild and patch since python3-enum34 is gone (Closes: #799254)
