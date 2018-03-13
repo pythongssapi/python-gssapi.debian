@@ -21,8 +21,12 @@ Python-GSSAPI provides both low-level and high level wrappers around the GSSAPI
 C libraries.  While it focuses on the Kerberos mechanism, it should also be
 useable with other GSSAPI mechanisms.
 
-Documentation for the latest released version can be found at
-`https://pythonhosted.org/gssapi <https://pythonhosted.org/gssapi>`_.
+Documentation for the latest released version (including pre-release versions)
+can be found at
+`https://pythongssapi.github.io/python-gssapi/stable <https://pythongssapi.github.io/python-gssapi/stable>`_.
+
+Documentation for the latest commit on master can be found at
+`https://pythongssapi.github.io/python-gssapi/latest <https://pythongssapi.github.io/python-gssapi/latest>`_.
 
 Requirements
 ============
@@ -135,6 +139,8 @@ Extensions
 ----------
 
 In addition to RFC 2743/2744, Python-GSSAPI also has support for:
+
+* RFC 5587 (Extended GSS Mechanism Inquiry APIs)
 
 * RFC 5588 (GSS-API Extension for Storing Delegated Credentials)
 

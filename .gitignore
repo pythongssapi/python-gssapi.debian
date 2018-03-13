@@ -1,0 +1,17 @@
+.coverage
+*.egg-info
+*.egg
+*~
+*.pyc
+/build/
+*.swp
+*.swo
+*.so
+.tox
+dist
+gssapi/**/*.c
+docs/build
+__dont_use_cython__.txt
+**/__pycache__
+.eggs
+.venv

@@ -8,9 +8,8 @@ import should_be.all  # noqa
 
 import gssapi.raw as gb
 import gssapi.raw.misc as gbmisc
-from gssapi.tests._utils import _extension_test, _minversion_test
-from gssapi.tests._utils import _requires_krb_plugin
-from gssapi.tests import k5test as kt
+import k5test.unit as ktu
+import k5test as kt
 
 
 TARGET_SERVICE_NAME = b'host'
@@ -116,7 +115,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
     # NB(directxman12): we don't test display_name_ext because the krb5 mech
     # doesn't actually implement it
 
-    @_extension_test('rfc6680', 'RFC 6680')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
     def test_inquire_name_not_mech_name(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -127,7 +126,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         inquire_res.is_mech_name.should_be_false()
         inquire_res.mech.should_be_none()
 
-    @_extension_test('rfc6680', 'RFC 6680')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
     def test_inquire_name_mech_name(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -140,8 +139,9 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         inquire_res.mech.should_be_a(gb.OID)
         inquire_res.mech.should_be(gb.MechType.kerberos)
 
-    @_extension_test('rfc6680', 'RFC 6680')
-    @_extension_test('rfc6680_comp_oid', 'RFC 6680 (COMPOSITE_EXPORT OID)')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
+    @ktu.gssapi_extension_test('rfc6680_comp_oid',
+                               'RFC 6680 (COMPOSITE_EXPORT OID)')
     def test_import_export_name_composite_no_attrs(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -159,8 +159,8 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
 
     # NB(directxman12): the greet_client plugin only allows for one value
 
-    @_extension_test('rfc6680', 'RFC 6680')
-    @_requires_krb_plugin('authdata', 'greet_client')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
+    @ktu.krb_plugin_test('authdata', 'greet_client')
     def test_inquire_name_with_attrs(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -174,8 +174,8 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         inquire_res.attrs.should_be_a(list)
         inquire_res.attrs.should_be([b'urn:greet:greeting'])
 
-    @_extension_test('rfc6680', 'RFC 6680')
-    @_requires_krb_plugin('authdata', 'greet_client')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
+    @ktu.krb_plugin_test('authdata', 'greet_client')
     def test_basic_get_set_delete_name_attributes_no_auth(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -204,8 +204,8 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         #     gb.exceptions.OperationUnavailableError, canon_name,
         #     'urn:greet:greeting')
 
-    @_extension_test('rfc6680', 'RFC 6680')
-    @_requires_krb_plugin('authdata', 'greet_client')
+    @ktu.gssapi_extension_test('rfc6680', 'RFC 6680')
+    @ktu.krb_plugin_test('authdata', 'greet_client')
     def test_import_export_name_composite(self):
         base_name = gb.import_name(TARGET_SERVICE_NAME,
                                    gb.NameType.hostbased_service)
@@ -283,7 +283,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         gb.release_name(name)
         gb.release_cred(creds)
 
-    @_extension_test('cred_imp_exp', 'credentials import-export')
+    @ktu.gssapi_extension_test('cred_imp_exp', 'credentials import-export')
     def test_cred_import_export(self):
         creds = gb.acquire_cred(None).creds
         token = gb.export_cred(creds)
@@ -367,7 +367,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
     # NB(directxman12): We don't test `process_context_token` because
     #                   there is no clear non-deprecated way to test it
 
-    @_extension_test('s4u', 'S4U')
+    @ktu.gssapi_extension_test('s4u', 'S4U')
     def test_add_cred_impersonate_name(self):
         target_name = gb.import_name(TARGET_SERVICE_NAME,
                                      gb.NameType.hostbased_service)
@@ -399,7 +399,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
 
         new_creds.should_be_a(gb.Creds)
 
-    @_extension_test('s4u', 'S4U')
+    @ktu.gssapi_extension_test('s4u', 'S4U')
     def test_acquire_creds_impersonate_name(self):
         target_name = gb.import_name(TARGET_SERVICE_NAME,
                                      gb.NameType.hostbased_service)
@@ -430,8 +430,9 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         # no need to explicitly release any more -- we can just rely on
         # __dealloc__ (b/c cython)
 
-    @_extension_test('s4u', 'S4U')
-    @_minversion_test('1.11', 'returning delegated S4U2Proxy credentials')
+    @ktu.gssapi_extension_test('s4u', 'S4U')
+    @ktu.krb_minversion_test('1.11',
+                             'returning delegated S4U2Proxy credentials')
     def test_always_get_delegated_creds(self):
         svc_princ = SERVICE_PRINCIPAL.decode("UTF-8")
         self.realm.kinit(svc_princ, flags=['-k', '-f'])
@@ -451,7 +452,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         server_ctx_resp.delegated_creds.shouldnt_be_none()
         server_ctx_resp.delegated_creds.should_be_a(gb.Creds)
 
-    @_extension_test('rfc5588', 'RFC 5588')
+    @ktu.gssapi_extension_test('rfc5588', 'RFC 5588')
     def test_store_cred_acquire_cred(self):
         # we need to acquire a forwardable ticket
         svc_princ = SERVICE_PRINCIPAL.decode("UTF-8")
@@ -474,7 +475,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         deleg_creds = server_ctx_resp.delegated_creds
         deleg_creds.shouldnt_be_none()
         store_res = gb.store_cred(deleg_creds, usage='initiate',
-                                  set_default=True)
+                                  set_default=True, overwrite=True)
 
         store_res.shouldnt_be_none()
         store_res.usage.should_be('initiate')
@@ -484,7 +485,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         acq_resp = gb.acquire_cred(deleg_name, usage='initiate')
         acq_resp.shouldnt_be_none()
 
-    @_extension_test('cred_store', 'credentials store')
+    @ktu.gssapi_extension_test('cred_store', 'credentials store')
     def test_store_cred_into_acquire_cred(self):
         CCACHE = 'FILE:{tmpdir}/other_ccache'.format(tmpdir=self.realm.tmpdir)
         KT = '{tmpdir}/other_keytab'.format(tmpdir=self.realm.tmpdir)
@@ -599,7 +600,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         res.shouldnt_be_none()
         res.should_include(gb.MechType.kerberos)
 
-    @_extension_test('password', 'Password')
+    @ktu.gssapi_extension_test('password', 'Password')
     def test_acquire_cred_with_password(self):
         password = self.realm.password('user')
         self.realm.kinit(self.realm.user_princ, password=password)
@@ -620,7 +621,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
 
         output_ttl.should_be_a(int)
 
-    @_extension_test('password_add', 'Password (add)')
+    @ktu.gssapi_extension_test('password_add', 'Password (add)')
     def test_add_cred_with_password(self):
         password = self.realm.password('user')
         self.realm.kinit(self.realm.user_princ, password=password)
@@ -642,6 +643,209 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         output_accept_ttl.should_be_a(int)
 
         new_creds.should_be_a(gb.Creds)
+
+    @ktu.gssapi_extension_test('rfc5587', 'RFC 5587')
+    def test_rfc5587(self):
+        mechs = gb.indicate_mechs_by_attrs(None, None, None)
+
+        mechs.should_be_a(set)
+        mechs.shouldnt_be_empty()
+
+        # We need last_attr to be an attribute on last_mech.
+        # Since mechs is of type set and thus not indexable, these
+        # are used to track the last visited mech for testing
+        # purposes, and saves a call to inquire_attrs_for_mech().
+        last_attr = None
+        last_mech = None
+
+        for mech in mechs:
+            mech.shouldnt_be_none()
+            mech.should_be_a(gb.OID)
+            last_mech = mech
+
+            inquire_out = gb.inquire_attrs_for_mech(mech)
+            mech_attrs = inquire_out.mech_attrs
+            known_mech_attrs = inquire_out.known_mech_attrs
+
+            mech_attrs.should_be_a(set)
+            mech_attrs.shouldnt_be_empty()
+
+            known_mech_attrs.should_be_a(set)
+            known_mech_attrs.shouldnt_be_empty()
+
+            # Verify that we get data for every available
+            # attribute. Testing the contents of a few known
+            # attributes is done in test_display_mech_attr().
+            for mech_attr in mech_attrs:
+                mech_attr.shouldnt_be_none()
+                mech_attr.should_be_a(gb.OID)
+
+                display_out = gb.display_mech_attr(mech_attr)
+                display_out.name.shouldnt_be_none()
+                display_out.short_desc.shouldnt_be_none()
+                display_out.long_desc.shouldnt_be_none()
+                display_out.name.should_be_a(bytes)
+                display_out.short_desc.should_be_a(bytes)
+                display_out.long_desc.should_be_a(bytes)
+
+                last_attr = mech_attr
+
+            for mech_attr in known_mech_attrs:
+                mech_attr.shouldnt_be_none()
+                mech_attr.should_be_a(gb.OID)
+
+                display_out = gb.display_mech_attr(mech_attr)
+                display_out.name.shouldnt_be_none()
+                display_out.short_desc.shouldnt_be_none()
+                display_out.long_desc.shouldnt_be_none()
+                display_out.name.should_be_a(bytes)
+                display_out.short_desc.should_be_a(bytes)
+                display_out.long_desc.should_be_a(bytes)
+
+        attrs = set([last_attr])
+
+        mechs = gb.indicate_mechs_by_attrs(attrs, None, None)
+        mechs.shouldnt_be_empty()
+        mechs.should_include(last_mech)
+
+        mechs = gb.indicate_mechs_by_attrs(None, attrs, None)
+        mechs.shouldnt_include(last_mech)
+
+        mechs = gb.indicate_mechs_by_attrs(None, None, attrs)
+        mechs.shouldnt_be_empty()
+        mechs.should_include(last_mech)
+
+    @ktu.gssapi_extension_test('rfc5587', 'RFC 5587')
+    def test_display_mech_attr(self):
+        test_attrs = [
+            # oid, name, short_desc, long_desc
+            # Taken from krb5/src/tests/gssapi/t_saslname
+            [gb.OID.from_int_seq("1.3.6.1.5.5.13.24"), b"GSS_C_MA_CBINDINGS",
+             b"channel-bindings", b"Mechanism supports channel bindings."],
+            [gb.OID.from_int_seq("1.3.6.1.5.5.13.1"),
+             b"GSS_C_MA_MECH_CONCRETE", b"concrete-mech",
+             b"Mechanism is neither a pseudo-mechanism nor a composite "
+             b"mechanism."]
+        ]
+
+        for attr in test_attrs:
+            display_out = gb.display_mech_attr(attr[0])
+            display_out.name.should_be(attr[1])
+            display_out.short_desc.should_be(attr[2])
+            display_out.long_desc.should_be(attr[3])
+
+    @ktu.gssapi_extension_test('rfc5801', 'SASL Names')
+    def test_sasl_names(self):
+        mechs = gb.indicate_mechs()
+
+        for mech in mechs:
+            out = gb.inquire_saslname_for_mech(mech)
+
+            out_smn = out.sasl_mech_name
+            out_smn.shouldnt_be_none()
+            out_smn.should_be_a(bytes)
+            out_smn.shouldnt_be_empty()
+
+            out_mn = out.mech_name
+            out_mn.shouldnt_be_none()
+            out_mn.should_be_a(bytes)
+            out_mn.shouldnt_be_empty()
+
+            out_md = out.mech_description
+            out_md.shouldnt_be_none()
+            out_md.should_be_a(bytes)
+            out_md.shouldnt_be_empty()
+
+            cmp_mech = gb.inquire_mech_for_saslname(out_smn)
+            cmp_mech.shouldnt_be_none()
+            cmp_mech.should_be(mech)
+
+    @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
+    @ktu.gssapi_extension_test('s4u', 'S4U')
+    @ktu.krb_minversion_test('1.16',
+                             'querying impersonator name of krb5 GSS '
+                             'Credential using the '
+                             'GSS_KRB5_GET_CRED_IMPERSONATOR OID')
+    def test_inquire_cred_by_oid_impersonator(self):
+        svc_princ = SERVICE_PRINCIPAL.decode("UTF-8")
+        self.realm.kinit(svc_princ, flags=['-k', '-f'])
+
+        target_name = gb.import_name(TARGET_SERVICE_NAME,
+                                     gb.NameType.hostbased_service)
+
+        client_token = gb.init_sec_context(target_name).token
+
+        # if our acceptor creds have a usage of both, we get
+        # s4u2proxy delegated credentials
+        server_creds = gb.acquire_cred(None, usage='both').creds
+        server_ctx_resp = gb.accept_sec_context(client_token,
+                                                acceptor_creds=server_creds)
+
+        server_ctx_resp.shouldnt_be_none()
+        server_ctx_resp.delegated_creds.shouldnt_be_none()
+        server_ctx_resp.delegated_creds.should_be_a(gb.Creds)
+
+        # GSS_KRB5_GET_CRED_IMPERSONATOR
+        oid = gb.OID.from_int_seq("1.2.840.113554.1.2.2.5.14")
+        info = gb.inquire_cred_by_oid(server_ctx_resp.delegated_creds, oid)
+
+        info.should_be_a(list)
+        info.shouldnt_be_empty()
+        info[0].should_be_a(bytes)
+        info[0].should_be(b"%s@%s" % (SERVICE_PRINCIPAL,
+                                      self.realm.realm.encode('utf-8')))
+
+    @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
+    def test_inquire_sec_context_by_oid(self):
+        target_name = gb.import_name(TARGET_SERVICE_NAME,
+                                     gb.NameType.hostbased_service)
+        ctx_resp1 = gb.init_sec_context(target_name)
+
+        server_name = gb.import_name(SERVICE_PRINCIPAL,
+                                     gb.NameType.kerberos_principal)
+        server_creds = gb.acquire_cred(server_name)[0]
+        server_resp = gb.accept_sec_context(ctx_resp1[3],
+                                            acceptor_creds=server_creds)
+        server_ctx = server_resp[0]
+        server_tok = server_resp[3]
+
+        client_resp2 = gb.init_sec_context(target_name,
+                                           context=ctx_resp1[0],
+                                           input_token=server_tok)
+        client_ctx = client_resp2[0]
+
+        # GSS_C_INQ_SSPI_SESSION_KEY
+        session_key_oid = gb.OID.from_int_seq("1.2.840.113554.1.2.2.5.5")
+
+        client_key = gb.inquire_sec_context_by_oid(client_ctx, session_key_oid)
+        server_key = gb.inquire_sec_context_by_oid(server_ctx, session_key_oid)
+
+        client_key.should_be_a(list)
+        client_key.shouldnt_be_empty()
+        server_key.should_be_a(list)
+        server_key.shouldnt_be_empty()
+        client_key.should_have_same_items_as(server_key)
+
+    @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
+    def test_inquire_sec_context_by_oid_should_raise_error(self):
+        target_name = gb.import_name(TARGET_SERVICE_NAME,
+                                     gb.NameType.hostbased_service)
+        ctx_resp1 = gb.init_sec_context(target_name)
+
+        server_name = gb.import_name(SERVICE_PRINCIPAL,
+                                     gb.NameType.kerberos_principal)
+        server_creds = gb.acquire_cred(server_name)[0]
+        server_resp = gb.accept_sec_context(ctx_resp1[3],
+                                            acceptor_creds=server_creds)
+
+        client_resp2 = gb.init_sec_context(target_name,
+                                           context=ctx_resp1[0],
+                                           input_token=server_resp[3])
+        client_ctx = client_resp2[0]
+
+        invalid_oid = gb.OID.from_int_seq("1.2.3.4.5.6.7.8.9")
+        gb.inquire_sec_context_by_oid.should_raise(gb.GSSError, client_ctx,
+                                                   invalid_oid)
 
 
 class TestIntEnumFlagSet(unittest.TestCase):
@@ -1041,7 +1245,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         unwrapped_message.shouldnt_be_empty()
         unwrapped_message.should_be(b'test message')
 
-    @_extension_test('dce', 'DCE (IOV/AEAD)')
+    @ktu.gssapi_extension_test('dce', 'DCE (IOV/AEAD)')
     def test_basic_iov_wrap_unwrap_prealloc(self):
         init_data = b'some encrypted data'
         init_other_data = b'some other encrypted data'
@@ -1085,7 +1289,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         init_message[2].value.should_be(init_data)
         init_message[3].value.should_be(init_other_data)
 
-    @_extension_test('dce', 'DCE (IOV/AEAD)')
+    @ktu.gssapi_extension_test('dce', 'DCE (IOV/AEAD)')
     def test_basic_iov_wrap_unwrap_autoalloc(self):
         init_data = b'some encrypted data'
         init_other_data = b'some other encrypted data'
@@ -1117,7 +1321,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         init_message[2].value.should_be(init_data)
         init_message[3].value.should_be(init_other_data)
 
-    @_extension_test('dce', 'DCE (IOV/AEAD)')
+    @ktu.gssapi_extension_test('dce', 'DCE (IOV/AEAD)')
     def test_basic_aead_wrap_unwrap(self):
         assoc_data = b'some sig data'
         (wrapped_message, conf) = gb.wrap_aead(self.client_ctx,
@@ -1143,7 +1347,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         unwrapped_message.shouldnt_be_empty()
         unwrapped_message.should_be(b'test message')
 
-    @_extension_test('dce', 'DCE (IOV/AEAD)')
+    @ktu.gssapi_extension_test('dce', 'DCE (IOV/AEAD)')
     def test_basic_aead_wrap_unwrap_no_assoc(self):
         (wrapped_message, conf) = gb.wrap_aead(self.client_ctx,
                                                b'test message')
@@ -1167,7 +1371,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         unwrapped_message.shouldnt_be_empty()
         unwrapped_message.should_be(b'test message')
 
-    @_extension_test('dce', 'DCE (IOV/AEAD)')
+    @ktu.gssapi_extension_test('dce', 'DCE (IOV/AEAD)')
     def test_basic_aead_wrap_unwrap_bad_assoc_raises_error(self):
         assoc_data = b'some sig data'
         (wrapped_message, conf) = gb.wrap_aead(self.client_ctx,
@@ -1183,7 +1387,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         gb.unwrap_aead.should_raise(gb.BadMICError, self.server_ctx,
                                     wrapped_message, b'some other sig data')
 
-    @_extension_test('iov_mic', 'IOV MIC')
+    @ktu.gssapi_extension_test('iov_mic', 'IOV MIC')
     def test_get_mic_iov(self):
         init_message = gb.IOV(b'some data',
                               (gb.IOVBufferType.sign_only, b'some sig data'),
@@ -1194,7 +1398,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         init_message[2].type.should_be(gb.IOVBufferType.mic_token)
         init_message[2].value.shouldnt_be_empty()
 
-    @_extension_test('iov_mic', 'IOV MIC')
+    @ktu.gssapi_extension_test('iov_mic', 'IOV MIC')
     def test_basic_verify_mic_iov(self):
         init_message = gb.IOV(b'some data',
                               (gb.IOVBufferType.sign_only, b'some sig data'),
@@ -1209,7 +1413,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
 
         qop_used.should_be_an_integer()
 
-    @_extension_test('iov_mic', 'IOV MIC')
+    @ktu.gssapi_extension_test('iov_mic', 'IOV MIC')
     def test_verify_mic_iov_bad_mic_raises_error(self):
         init_message = gb.IOV(b'some data',
                               (gb.IOVBufferType.sign_only, b'some sig data'),
@@ -1220,7 +1424,7 @@ class TestWrapUnwrap(_GSSAPIKerberosTestCase):
         gb.verify_mic_iov.should_raise(gb.GSSError, self.server_ctx,
                                        init_message)
 
-    @_extension_test('iov_mic', 'IOV MIC')
+    @ktu.gssapi_extension_test('iov_mic', 'IOV MIC')
     def test_get_mic_iov_length(self):
         init_message = gb.IOV(b'some data',
                               (gb.IOVBufferType.sign_only, b'some sig data'),
@@ -1262,3 +1466,13 @@ class TestOIDTransforms(unittest.TestCase):
             int_seq = oid['string'].split('.')
             o = gb.OID.from_int_seq(int_seq)
             o.__bytes__().should_be(oid['bytes'])
+
+    def test_comparisons(self):
+        krb5 = gb.OID.from_int_seq(TEST_OIDS['KRB5']['string'])
+        krb5_other = gb.OID.from_int_seq(TEST_OIDS['KRB5']['string'])
+        spnego = gb.OID.from_int_seq(TEST_OIDS['SPNEGO']['string'])
+
+        (krb5 == krb5_other).should_be(True)
+        (krb5 == spnego).should_be(False)
+        (krb5 != krb5_other).should_be(False)
+        (krb5 != spnego).should_be(True)

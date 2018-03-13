@@ -69,9 +69,21 @@ try:
 except ImportError:
     pass
 
+# optional RFC 5587 support
+try:
+    from gssapi.raw.ext_rfc5587 import *  # noqa
+except ImportError:
+    pass
+
 # optional RFC 5588 support
 try:
     from gssapi.raw.ext_rfc5588 import *  # noqa
+except ImportError:
+    pass
+
+# optional RFC 5801 support
+try:
+    from gssapi.raw.ext_rfc5801 import *  # noqa
 except ImportError:
     pass
 
@@ -105,5 +117,11 @@ except ImportError:
 try:
     from gssapi.raw.ext_rfc6680 import *  # noqa
     from gssapi.raw.ext_rfc6680_comp_oid import *  # noqa
+except ImportError:
+    pass
+
+# optional Global Grid Forum support
+try:
+    from gssapi.raw.ext_ggf import *  # noqa
 except ImportError:
     pass

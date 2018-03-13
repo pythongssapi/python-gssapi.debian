@@ -64,3 +64,13 @@ InquireNameResult = namedtuple('InquireNameResult',
 GetNameAttributeResult = namedtuple('GetNamedAttributeResult',
                                     ['values', 'display_values',
                                      'authenticated', 'complete'])
+
+InquireAttrsResult = namedtuple('InquireAttrsResult',
+                                ['mech_attrs', 'known_mech_attrs'])
+
+DisplayAttrResult = namedtuple('DisplayAttrResult', ['name', 'short_desc',
+                                                     'long_desc'])
+
+InquireSASLNameResult = namedtuple('InquireSASLNameResult',
+                                   ['sasl_mech_name', 'mech_name',
+                                    'mech_description'])

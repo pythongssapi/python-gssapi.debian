@@ -82,6 +82,7 @@ if ENABLE_SUPPORT_DETECTION:
     import ctypes.util
 
     main_lib = os.environ.get('GSSAPI_MAIN_LIB', None)
+    main_path = ""
     if main_lib is None and osx_has_gss_framework:
         main_lib = ctypes.util.find_library('GSS')
     elif main_lib is None:
@@ -89,12 +90,16 @@ if ENABLE_SUPPORT_DETECTION:
             if opt.startswith('-lgssapi'):
                 main_lib = 'lib%s.so' % opt[2:]
 
+            # To support Heimdal on Debian, read the linker path.
+            if opt.startswith('-Wl,/'):
+                main_path = opt[4:] + "/"
+
     if main_lib is None:
         raise Exception("Could not find main GSSAPI shared library.  Please "
                         "try setting GSSAPI_MAIN_LIB yourself or setting "
                         "ENABLE_SUPPORT_DETECTION to 'false'")
 
-    GSSAPI_LIB = ctypes.CDLL(main_lib)
+    GSSAPI_LIB = ctypes.CDLL(main_path + main_lib)
 
 
 # add in the flag that causes us not to compile from Cython when
@@ -201,6 +206,7 @@ def gssapi_modules(lst):
 
     return res
 
+
 long_desc = re.sub('\.\. role:: \w+\(code\)\s*\n\s*.+', '',
                    re.sub(r':(python|bash|code):', '',
                           re.sub(r'\.\. code-block:: \w+', '::',
@@ -215,7 +221,7 @@ if sys.version_info < (3, 4):
 
 setup(
     name='gssapi',
-    version='1.2.0',
+    version='1.4.1',
     author='The Python GSSAPI Team',
     author_email='sross@redhat.com',
     packages=['gssapi', 'gssapi.raw', 'gssapi.raw._enum_extensions',
@@ -252,10 +258,13 @@ setup(
         main_file('chan_bindings'),
         extension_file('s4u', 'gss_acquire_cred_impersonate_name'),
         extension_file('cred_store', 'gss_store_cred_into'),
+        extension_file('rfc5587', 'gss_indicate_mechs_by_attrs'),
         extension_file('rfc5588', 'gss_store_cred'),
+        extension_file('rfc5801', 'gss_inquire_saslname_for_mech'),
         extension_file('cred_imp_exp', 'gss_import_cred'),
         extension_file('dce', 'gss_wrap_iov'),
         extension_file('iov_mic', 'gss_get_mic_iov'),
+        extension_file('ggf', 'gss_inquire_sec_context_by_oid'),
 
         # see ext_rfc6680_comp_oid for more information on this split
         extension_file('rfc6680', 'gss_display_name_ext'),
