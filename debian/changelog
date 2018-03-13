@@ -1,3 +1,10 @@
+python-gssapi (1.4.1-1) unstable; urgency=medium
+
+  * New upstream version 1.4.1
+  * Add Timo to uploaders
+
+ -- Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>  Tue, 13 Mar 2018 16:44:53 -0400
+
 python-gssapi (1.2.0-1) unstable; urgency=low
 
   * New upstream release
