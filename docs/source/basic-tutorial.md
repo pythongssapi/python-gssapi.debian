@@ -21,9 +21,10 @@ for later:
     >>>
 
 Note that this assumes you have a KRB5 realm set up, and some relevant
-functions available in the `REALM` object (see gssapi-console.py, or
+functions available in the `REALM` object (see gssapi-console.py in
+[gssapi_console](https://pypi.python.org/pypi/gssapi_console)), or
 try `$ run-lit -e gssapi basic-tutorial.md` when you have both
-gssapi-console and yalpt installed).  Any actions performed using the
+gssapi_console and yalpt installed).  Any actions performed using the
 `REALM` object are not part of the GSSAPI library; the `REALM` object
 simply contians wrappers to krb5 commands generally run separately from
 the application using GSSAPI.
@@ -42,12 +43,12 @@ Suppose we wanted to refer to an HTTP server on the current host.
 We could refer to it as a *host-based service*, or in the default
 mechanism form (in this case, for krb5):
 
-    >>> server_hostbased_name = gssapi.Name('http@' + FQDN, name_type=gssapi.NameType.hostbased_service)
+    >>> server_hostbased_name = gssapi.Name('HTTP@' + FQDN, name_type=gssapi.NameType.hostbased_service)
     >>> server_hostbased_name
-    Name(b'http@sross', <OID 1.2.840.113554.1.2.1.4>)
-    >>> server_name = gssapi.Name('http/sross@')
+    Name(b'HTTP@sross', <OID 1.2.840.113554.1.2.1.4>)
+    >>> server_name = gssapi.Name('HTTP/sross@')
     >>> server_name
-    Name(b'http/sross@', None)
+    Name(b'HTTP/sross@', None)
     >>>
 
 These are both effectively the same, but if we *canonicalize* both
@@ -74,11 +75,11 @@ Credentials may be acquired for a particular name, or the default set
 of credentials may be acquired.
 
 For instance, suppose that we are writing a server, and wish to
-communicate accept connections as the 'http' service.  We would need
+communicate accept connections as the 'HTTP' service.  We would need
 to acquire credentials as such:
 
-    >>> REALM.addprinc('http/%s@%s' % (FQDN, REALM.realm))
-    >>> REALM.extract_keytab('http/%s@%s' % (FQDN, REALM.realm), REALM.keytab)
+    >>> REALM.addprinc('HTTP/%s@%s' % (FQDN, REALM.realm))
+    >>> REALM.extract_keytab('HTTP/%s@%s' % (FQDN, REALM.realm), REALM.keytab)
     >>> server_creds = gssapi.Credentials(usage='accept', name=server_name)
     >>>
 
@@ -205,9 +206,9 @@ since the context was set up to use encryption (the default):
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
       File "<string>", line 2, in decrypt
-      File "/home/directxman12/dev/gssapi/gssapi-console/.venv/lib/python3.4/site-packages/gssapi/_utils.py", line 167, in check_last_err
+      File "/usr/lib/python3.4/site-packages/gssapi/_utils.py", line 167, in check_last_err
         return func(self, *args, **kwargs)
-      File "/home/directxman12/dev/gssapi/gssapi-console/.venv/lib/python3.4/site-packages/gssapi/sec_contexts.py", line 295, in decrypt
+      File "/usr/lib/python3.4/site-packages/gssapi/sec_contexts.py", line 295, in decrypt
         unwrapped_message=res.message)
     gssapi.exceptions.EncryptionNotUsed: Confidentiality was requested, but not used: The context was established with encryption, but unwrapped message was not encrypted.
     >>>

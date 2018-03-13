@@ -1,53 +1,106 @@
+sudo: required
+
+# not necessary, but less confusing if defined
 language: python
-python:
-  - "2.7"
-  - "3.5"
+
+services:
+  - docker
 
 env:
-  - KRB5_VER="1.10"
-  - KRB5_VER="1.12"
-  - KRB5_VER="1.13"
-  # - KRB5_VER="master"
+  - DISTRO=debian:stable PYTHON="2"
+  - DISTRO=debian:stable PYTHON="3" # 3.4, not 3.5
+  - DISTRO=debian:stable PYTHON="3" KRB5_VER="heimdal"
+  - DISTRO=centos:7 PYTHON="2" # el7 doesn't do python3 modules
+  - DISTRO=fedora:rawhide PYTHON="3"
+  - DISTRO=fedora:rawhide PYTHON="2"
 
-matrix:
-  exclude:
-    - python: "3.5"
-      env: KRB5_VER="1.10"
+# we do everything in docker
+install: skip
+before_install: skip
+
+stages:
+- verify
+- test
+- name: deploy latest docs
+  if: (branch = master OR branch =~ ^infra/$) AND type = push
+- name: deploy
+  if: tag is PRESENT
+
+script:
+  - sudo sed -i '1i 127.0.0.1 test.box' /etc/hosts
+  - sudo hostname test.box
+  - source ./.travis/lib-util.sh
+  - util::docker-run $DISTRO ./.travis/build.sh
+
+jobs:
   include:
-    - python: "3.3"
-      env: KRB5_VER="1.12"
-    - python: "3.4"
-      env: KRB5_VER="1.13"
-    - python: "3.5"
-      env: KRB5_VER="heimdal"
+  - stage: verify
+    env: DISTRO=fedora:rawhide PYTHON="2"
+    script:
+    - source ./.travis/lib-util.sh
+    - util::docker-run $DISTRO ./.travis/verify.sh
 
-install: sh -ex .travis.install.sh
+  - stage: verify
+    env: DISTRO=fedora:rawhide PYTHON="3"
+    script:
+    - source ./.travis/lib-util.sh
+    - util::docker-run $DISTRO ./.travis/verify.sh
 
-script: sh -x .travis.sh
+  - stage: deploy latest docs
+    script: skip
+    env:
+    - DISTRO=fedora:rawhide
+    - PYTHON="3"
+    - secure: L5SpEj5+no20PWwC9Y/XNhAfmUvYiuykwSMa/YyqvUuBjdizzpZcHr7Ego5nMdM1TniTxj4pSTM+GbM0FHCzNmAINSRh9g/D3hheRqlRBacqR0XwC9ZZRvkKvtzwnLh4vYWiauq4AoDeR5U6tkEcay6LjE57iMQcLjcKYBc+Eos=
+    before_deploy:
+    - source ./.travis/lib-util.sh
+    - util::docker-run $DISTRO ./.travis/before-docs-deploy.sh
 
-before_deploy: sh -x .travis.before-deploy.sh
-deploy:
-  - provider: releases
-    api_key:
-      secure: U8RPR6liglI4J8MOSEyK9uxvSFRMcCkKLflpIFKcpUFg+PUuK85YtRdOOL/L/pifat9/KvoF7OJEMNTQjoYAhziMu8GGsiPZlkFzXNiy54FxTTtgprkhllRK7nw/jK/hopKM01goKVaUL860aU+KdpfStRTaAy8ZGEj13jwOMYU=
-    file_glob: true
-    file:
-      - tag_build/*
-    on:
-      repo: pythongssapi/python-gssapi
-      tags: true
-      python: "3.5"
-      condition: "$KRB5_VER = '1.13'"
-    skip_cleanup: true
-  - provider: pypi
-    user:
-      secure: gMwGf6Zt2BuPHN6Qy4feaJaZQBIYZ1lZIdFcpugyhnWtxytzwApx2LTXqHgdaVK7Ik6Xk97RmWS5SyciKmC2V1nyaHCX/f31QZAD3TrLqhScPtvE6j9j/srJhDBjp5yAT8NENMykeSvoIhiidw1tPzWYRW9c93roaOUv6Kqd3zc=
-    password:
-      secure: D0lX+DRVac2GN3bZuKxd45DluBrcvwMfV+cciannEJ39kjbHTQEdpi0Uv92rDLNicjqyjy9rAEP7UAQQ1GDOvZcN5OG1+uWU1tSV84uKPgT92YbbQQdHRs/Rh3KSHKeaiJ+3TTDSeBuXYgWRs2gCeVAb18LBYjtIHLZxCFB8ln0=
-    on:
-      repo: pythongssapi/python-gssapi
-      tags: true
-      python: "3.5"
-      condition: "$KRB5_VER = '1.13'"
-    skip_cleanup: true
-    docs_dir: travis_docs_build/html
+    deploy:
+    - provider: script
+      script: .travis/docs-deploy.sh travis_docs_build/html latest pythongssapi/python-gssapi
+      skip_cleanup: true
+      on:
+        all_branches: true
+
+
+  - stage: deploy
+    script: skip
+    env:
+    - DISTRO=fedora:rawhide
+    - PYTHON="3"
+    - secure: L5SpEj5+no20PWwC9Y/XNhAfmUvYiuykwSMa/YyqvUuBjdizzpZcHr7Ego5nMdM1TniTxj4pSTM+GbM0FHCzNmAINSRh9g/D3hheRqlRBacqR0XwC9ZZRvkKvtzwnLh4vYWiauq4AoDeR5U6tkEcay6LjE57iMQcLjcKYBc+Eos=
+    before_deploy:
+    - source ./.travis/lib-util.sh
+    - util::docker-run $DISTRO ./.travis/before-deploy.sh
+    - ls -alR `pwd`
+
+    deploy:
+    - provider: releases
+      api_key:
+        secure: fAaSSSjd/nUrIpINBjAT590pGF2nGq3I8ee6aGq6IAFpXoa/9eeN5eyOrE4MYucWCwYcH28c7510n35vuZQQor+UZIDo6l0K5M64/NZE1cZ43zOMjw3yHlrsJG+ohPS7YvjqD8GaFlLhF6ZvWvrPmWeijvs8qAT1eL7QoEG0xBk=
+      file_glob: true
+      file:
+        - tag_build/*
+      skip_cleanup: true
+      on:
+        all_branches: true
+
+    - provider: pypi
+      user:
+        secure: "jUAMucBq+9xH8x9u0I0LOwrs3Zb++KN7FwIIwz2CyAt/+TyyrJzeGJaV+dTiJ1OqcUIFqQG6jopzpnAe4biL1O68PEwz9BphKetFLpLHiFNm/n67LYno6NFonWmxndIy99pOP6NZu29nzSNeYq/KgEHo/5OkqEGOxk//lh7X/OY="
+      password:
+        secure: "ZqywwnR+G5VeM2sStwfLeutOvqbULHtnStjrdYc8WcC/FBVwmH/W48fTlvxrnswmfKx7Eljv0nN4VcBpoFf1tvz4O2oK/tCRpf0N8SvpT0jBx8bLGUxJ1/3Po6rFgBRWgSb/mzKHPKI6fLlQNcNg8lrd9e1j/zgbVRSwNeMUOR8="
+      skip_cleanup: true
+      docs_dir: travis_docs_build/html
+      on:
+        all_branches: true
+      # NB(directxman12): this is a hack.  Check ./.travis/before-deploy.sh for an explanation.
+      distributions: "check"
+    
+    - provider: script
+      script: .travis/docs-deploy.sh travis_docs_build/html stable pythongssapi/python-gssapi
+      skip_cleanup: true
+      on:
+        all_branches: true
+
