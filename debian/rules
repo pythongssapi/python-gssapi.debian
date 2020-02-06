@@ -17,4 +17,4 @@ override_dh_auto_test:
 	python3 -c 'import should_be' && python3 setup.py nosetests || true
 
 override_dh_auto_clean:
-	find . -name \*.pyc -or -name \*.c -or -name \*.so -or -name \*.egg -delete
+	find . \( -name \*.pyc -or -name \*.c -or -name \*.so -or -name \*.egg \) -delete
