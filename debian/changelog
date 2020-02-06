@@ -1,3 +1,10 @@
+python-gssapi (1.4.1-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Removed Python 2 support (Closes: #937801).
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 13 Sep 2019 12:56:48 +0200
+
 python-gssapi (1.4.1-1) unstable; urgency=medium
 
   * New upstream version 1.4.1

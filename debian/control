@@ -4,29 +4,16 @@ Priority: optional
 Maintainer: Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>
 Uploaders: Dafydd Harries <daf@debian.org>, Timo Aaltonen <tjaalton@debian.org>
 Standards-Version: 3.9.7
-X-Python-Version: >= 2.7
-X-Python3-Version: >= 3.4
 Homepage: https://github.com/pythongssapi/python-gssapi
-Build-Depends: cython, cython3,
+Build-Depends: cython3,
                debhelper (>= 9), dh-python, quilt,
-               python-all-dev, python3-all-dev,
-               python-setuptools, python3-setuptools,
-               python-flake8, python3-flake8,
-               python-nose, python3-nose,
-               python-nose-parameterized, python3-nose-parameterized,
-               python-six, python3-six,
+               python3-all-dev,
+               python3-setuptools,
+               python3-flake8,
+               python3-nose,
+               python3-nose-parameterized,
+               python3-six,
                libkrb5-dev
-
-Package: python-gssapi
-Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
-Provides: ${python:Provides}
-Description: Python interface to GSSAPI
- Python Bindings for GSSAPI.  These bindings are for both RFC 2743/2744 and
- many extensions.  They are native bindings produced using Cython.
- .
- Available extensions will vary based on what your GSSAPI implementation
- supports; see package documentation for a detailed list of what is available.
 
 Package: python3-gssapi
 Architecture: any
