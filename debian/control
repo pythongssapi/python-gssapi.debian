@@ -3,10 +3,10 @@ Section: python
 Priority: optional
 Maintainer: Robbie Harwood (frozencemetery) <rharwood@club.cc.cmu.edu>
 Uploaders: Dafydd Harries <daf@debian.org>, Timo Aaltonen <tjaalton@debian.org>
-Standards-Version: 3.9.7
+Standards-Version: 4.5.0
 Homepage: https://github.com/pythongssapi/python-gssapi
 Build-Depends: cython3,
-               debhelper (>= 9), dh-python, quilt,
+               debhelper (>= 10), dh-python,
                python3-all-dev,
                python3-setuptools,
                python3-flake8,
