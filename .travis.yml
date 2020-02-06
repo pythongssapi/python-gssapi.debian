@@ -6,15 +6,7 @@ language: python
 services:
   - docker
 
-env:
-  - DISTRO=debian:stable PYTHON="2"
-  - DISTRO=debian:stable PYTHON="3" # 3.4, not 3.5
-  - DISTRO=debian:stable PYTHON="3" KRB5_VER="heimdal"
-  - DISTRO=centos:7 PYTHON="2" # el7 doesn't do python3 modules
-  - DISTRO=fedora:rawhide PYTHON="3"
-  - DISTRO=fedora:rawhide PYTHON="2"
-
-# we do everything in docker
+# we do everything in docker for non MacOS, MacOS setup is in .travis/build.sh
 install: skip
 before_install: skip
 
@@ -27,29 +19,73 @@ stages:
   if: tag is PRESENT
 
 script:
-  - sudo sed -i '1i 127.0.0.1 test.box' /etc/hosts
-  - sudo hostname test.box
-  - source ./.travis/lib-util.sh
-  - util::docker-run $DISTRO ./.travis/build.sh
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+  sudo sed -i '1i 127.0.0.1 test.box' /etc/hosts;
+  sudo hostname test.box;
+  source ./.travis/lib-util.sh;
+  util::docker-run $DISTRO ./.travis/build.sh;
+  fi
+- if [[ "$TRAVIS_OS_NAME" != "linux" ]]; then ./.travis/build.sh; fi
 
 jobs:
   include:
-  - stage: verify
-    env: DISTRO=fedora:rawhide PYTHON="2"
+  - &docker_verify
+    stage: verify
+    env: DISTRO=fedora:latest PYTHON="2"
     script:
     - source ./.travis/lib-util.sh
     - util::docker-run $DISTRO ./.travis/verify.sh
 
-  - stage: verify
-    env: DISTRO=fedora:rawhide PYTHON="3"
-    script:
-    - source ./.travis/lib-util.sh
-    - util::docker-run $DISTRO ./.travis/verify.sh
+  - <<: *docker_verify
+    env: DISTRO=fedora:latest PYTHON="3"
+
+
+  # need to explictly define each builder for test due to different os types
+  - stage: test
+    env: DISTRO=debian:stable PYTHON="2"
+
+  - stage: test
+    env: DISTRO=debian:stable PYTHON="3" # 3.4, not 3.5
+
+  - stage: test
+    env: DISTRO=debian:stable PYTHON="3" KRB5_VER="heimdal"
+
+  - stage: test
+    env: DISTRO=centos:7 PYTHON="2" # el7 doesn't do python3 modules
+
+  - stage: test
+    env: DISTRO=fedora:latest PYTHON="3"
+
+  - stage: test
+    env: DISTRO=fedora:latest PYTHON="2"
+
+  - &osx_test
+    stage: test
+    env: PYTHON="2" KRB5_VER="heimdal" PYENV="2.7.14"
+    os: osx
+    osx_image: xcode9.2
+    language: generic # causes issues with pyenv installer when set to python
+
+  - <<: *osx_test
+    env: PYTHON="3" KRB5_VER="heimdal" PYENV="3.6.3"
+
+  - &win_test
+    stage: test
+    env: PYTHON="2" PYENV="2.7.16" EXTRA_BUILDEXT="--compiler=mingw32"
+    os: windows
+    language: sh  # Windows not supported yet
+
+  - <<: *win_test
+    env: PYTHON="3" PYENV="3.6.8"
+
+  - <<: *win_test
+    env: PYTHON="3" PYENV="3.7.3"
+
 
   - stage: deploy latest docs
     script: skip
     env:
-    - DISTRO=fedora:rawhide
+    - DISTRO=fedora:latest
     - PYTHON="3"
     - secure: L5SpEj5+no20PWwC9Y/XNhAfmUvYiuykwSMa/YyqvUuBjdizzpZcHr7Ego5nMdM1TniTxj4pSTM+GbM0FHCzNmAINSRh9g/D3hheRqlRBacqR0XwC9ZZRvkKvtzwnLh4vYWiauq4AoDeR5U6tkEcay6LjE57iMQcLjcKYBc+Eos=
     before_deploy:
@@ -67,7 +103,7 @@ jobs:
   - stage: deploy
     script: skip
     env:
-    - DISTRO=fedora:rawhide
+    - DISTRO=fedora:latest
     - PYTHON="3"
     - secure: L5SpEj5+no20PWwC9Y/XNhAfmUvYiuykwSMa/YyqvUuBjdizzpZcHr7Ego5nMdM1TniTxj4pSTM+GbM0FHCzNmAINSRh9g/D3hheRqlRBacqR0XwC9ZZRvkKvtzwnLh4vYWiauq4AoDeR5U6tkEcay6LjE57iMQcLjcKYBc+Eos=
     before_deploy:
@@ -87,20 +123,40 @@ jobs:
         all_branches: true
 
     - provider: pypi
-      user:
-        secure: "jUAMucBq+9xH8x9u0I0LOwrs3Zb++KN7FwIIwz2CyAt/+TyyrJzeGJaV+dTiJ1OqcUIFqQG6jopzpnAe4biL1O68PEwz9BphKetFLpLHiFNm/n67LYno6NFonWmxndIy99pOP6NZu29nzSNeYq/KgEHo/5OkqEGOxk//lh7X/OY="
+      user: rharwood
       password:
-        secure: "ZqywwnR+G5VeM2sStwfLeutOvqbULHtnStjrdYc8WcC/FBVwmH/W48fTlvxrnswmfKx7Eljv0nN4VcBpoFf1tvz4O2oK/tCRpf0N8SvpT0jBx8bLGUxJ1/3Po6rFgBRWgSb/mzKHPKI6fLlQNcNg8lrd9e1j/zgbVRSwNeMUOR8="
+        secure: "hN861mjtLeC8IysypC6Pqzlazq29I+c69XGjbUR53izYQ90cz2F+B2azVTl9Su9NbXzdsGnhWZrjY1jtYMPIZE15xDaC8vs61QijFClqmyuKNRVzCt1w/sj21hyLXnYIrkAo4e3bswPF+hRGNwfb+rVrR/dqUwd1wyjZBBYMcQE="
       skip_cleanup: true
       docs_dir: travis_docs_build/html
       on:
         all_branches: true
       # NB(directxman12): this is a hack.  Check ./.travis/before-deploy.sh for an explanation.
       distributions: "check"
-    
+
     - provider: script
       script: .travis/docs-deploy.sh travis_docs_build/html stable pythongssapi/python-gssapi
       skip_cleanup: true
       on:
         all_branches: true
 
+  - &win_deploy
+    stage: deploy
+    os: windows
+    script: # This is egregious hacks around Travis
+      - ./.travis/before-deploy-windows-wheels.sh
+      - ./.travis/deploy-win.sh
+    env:
+      - PYTHON="2"
+      - PYENV="2.7.16"
+      - EXTRA_BUILDEXT="--compiler=mingw32"
+    language: sh # Travis doesn't support python here
+
+  - <<: *win_deploy
+    env:
+      - PYTHON="3"
+      - PYENV="3.6.8"
+
+  - <<: *win_deploy
+    env:
+      - PYTHON="3"
+      - PYENV="3.7.3"

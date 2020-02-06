@@ -9,11 +9,17 @@ from gssapi.raw.sec_contexts cimport SecurityContext
 from gssapi.raw.misc import GSSError
 from gssapi.raw import types as gssapi_types
 from gssapi.raw.named_tuples import IOVUnwrapResult, WrapResult, UnwrapResult
-from collections import namedtuple, Sequence
+from collections import namedtuple
 
 from enum import IntEnum
 import six
 from gssapi.raw._enum_extensions import ExtendableEnum
+
+if six.PY2:
+    from collections import Sequence
+else:
+    from collections.abc import Sequence
+
 
 cdef extern from "python_gssapi_ext.h":
     # NB(directxman12): this wiki page has a different argument order
@@ -162,7 +168,7 @@ cdef class IOV:
             self._iov = <gss_iov_buffer_desc *>calloc(
                 self.iov_len, sizeof(gss_iov_buffer_desc))
             if self._iov is NULL:
-                    raise MemoryError("Cannot calloc for IOV buffer array")
+                raise MemoryError("Cannot calloc for IOV buffer array")
 
             for i in range(self.iov_len):
                 buff = self._buffs[i]
@@ -203,7 +209,7 @@ cdef class IOV:
                     new_val = b'\x00' * new_len
             else:
                 new_len = self._iov[i].buffer.length
-                new_val = self._iov[i].buffer.value[:new_len]
+                new_val = (<char*>self._iov[i].buffer.value)[:new_len]
 
             alloc = False
             if self._iov[i].type & GSS_IOV_BUFFER_FLAG_ALLOCATE:
@@ -497,7 +503,7 @@ def wrap_aead(SecurityContext context not None, bytes message not None,
                                  &conf_used, &output_buffer)
 
     if maj_stat == GSS_S_COMPLETE:
-        output_message = output_buffer.value[:output_buffer.length]
+        output_message = (<char*>output_buffer.value)[:output_buffer.length]
         gss_release_buffer(&min_stat, &output_buffer)
         return WrapResult(output_message, <bint>conf_used)
     else:
@@ -547,7 +553,7 @@ def unwrap_aead(SecurityContext context not None, bytes message not None,
                                    &conf_state, &qop_state)
 
     if maj_stat == GSS_S_COMPLETE:
-        output_message = output_buffer.value[:output_buffer.length]
+        output_message = (<char*>output_buffer.value)[:output_buffer.length]
         gss_release_buffer(&min_stat, &output_buffer)
         return UnwrapResult(output_message, <bint>conf_state, qop_state)
     else:
