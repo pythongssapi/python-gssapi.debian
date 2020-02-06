@@ -55,6 +55,14 @@ For Running the Tests
 
 * the `shouldbe` package (for tests)
 
+* the `k5test` package
+
+To install test dependencies using pip:
+
+.. code-block:: bash
+
+    $ pip install -r test-requirements.txt # Optional, for running test suite
+
 Installation
 ============
 
@@ -155,6 +163,8 @@ In addition to RFC 2743/2744, Python-GSSAPI also has support for:
 * DCE and IOV MIC extensions
 
 * `acquire_cred_with_password` and `add_cred_with_password`
+
+* GGF Extensions
 
 The Team
 ========

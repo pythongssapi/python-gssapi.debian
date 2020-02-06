@@ -8,8 +8,8 @@ from libc.stdlib cimport free, malloc
 from gssapi.raw.cython_types cimport gss_OID
 
 cdef inline bint c_compare_oids(gss_OID a, gss_OID b):
-    return (a.length == b.length and
-            not memcmp(a.elements, b.elements, a.length))
+    return (a.length == b.length and not
+            memcmp(a.elements, b.elements, a.length))
 
 
 cdef class OID:
@@ -32,11 +32,20 @@ cdef class OID:
     # cdef bint _free_on_dealloc = NULL
 
     def __cinit__(OID self, OID cpy=None, elements=None):
+        """
+        Note: cpy is named such for historical reasons. To perform a deep
+        copy, specify the elements parameter; this will copy the value of the
+        OID. To perform a shallow copy and take ownership of an existing OID,
+        use the cpy (default) argument.
+        """
         if cpy is not None and elements is not None:
             raise TypeError("Cannot instantiate a OID from both a copy and "
                             " a new set of elements")
         if cpy is not None:
             self.raw_oid = cpy.raw_oid
+            # take ownership of this OID (for dynamic cases)
+            self._free_on_dealloc = cpy._free_on_dealloc
+            cpy._free_on_dealloc = False
 
         if elements is None:
             self._free_on_dealloc = False
@@ -147,9 +156,12 @@ cdef class OID:
             pos += 1
         return decoded
 
+    @property
+    def dotted_form(self):
+        return '.'.join(str(x) for x in self._decode_asn1ber())
+
     def __repr__(self):
-        dotted_oid = '.'.join(str(x) for x in self._decode_asn1ber())
-        return "<OID {0}>".format(dotted_oid)
+        return "<OID {0}>".format(self.dotted_form)
 
     def __hash__(self):
         return hash(self.__bytes__())

@@ -20,7 +20,8 @@ setup::debian::install() {
     if [ x"$KRB5_VER" = "xheimdal" ]; then
         apt-get -y install heimdal-dev
     else
-        apt-get -y install krb5-{user,kdc,admin-server,multidev} libkrb5-dev
+        apt-get -y install krb5-{user,kdc,admin-server,multidev} libkrb5-dev \
+                gss-ntlmssp
     fi
 
     apt-get -y install gcc virtualenv python$IS3-{virtualenv,dev} cython$IS3
@@ -55,7 +56,8 @@ setup::fedora::install() {
 }
 
 setup::rh::install() {
-    setup::rh::yuminst krb5-{devel,libs,server,workstation} which gcc findutils
+    setup::rh::yuminst krb5-{devel,libs,server,workstation} \
+                       which gcc findutils gssntlmssp
 
     if [ -f /etc/fedora-release ]; then
         setup::fedora::install
@@ -64,11 +66,42 @@ setup::rh::install() {
     fi
 }
 
+setup::macos::install() {
+    # install Python from pyenv so we know what version is being used
+    pyenv install $PYENV
+    pyenv global $PYENV
+    virtualenv -p $(pyenv which python) .venv
+    source ./.venv/bin/activate
+    pip install --install-option='--no-cython-compile' cython
+}
+
+setup::windows::install() {
+    # Install the right Python version and MIT Kerberos
+    choco install python"${PYENV:0:1}" --version $PYENV
+    choco install mitkerberos --install-arguments "'ADDLOCAL=ALL'" || true
+    PYPATH="/c/Python${PYENV:0:1}${PYENV:2:1}"
+    # Update path to include them
+    export PATH="$PYPATH:$PYPATH/Scripts:/c/Program Files/MIT/Kerberos/bin:$PATH"
+
+    if [ "${PYENV:0:1}" == "2" ]; then
+        choco install vcredist2008
+        # Skip dotnet dependency:
+        # https://github.com/fredrikaverpil/vcpython27/pull/3
+        choco install --ignore-dependencies vcpython27
+    fi
+
+    python -m pip install --upgrade pip
+}
+
 setup::install() {
     if [ -f /etc/debian_version ]; then
         setup::debian::install
     elif [ -f /etc/redhat-release ]; then
         setup::rh::install
+    elif [ "$(uname)" == "Darwin" ]; then
+        setup::macos::install
+    elif [ "$TRAVIS_OS_NAME" == "windows" ]; then
+        setup::windows::install
     else
         echo "Distro not found!"
         false

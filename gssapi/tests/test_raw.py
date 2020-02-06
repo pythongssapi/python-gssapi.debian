@@ -1,15 +1,20 @@
-import collections
 import copy
 import os
 import socket
 import unittest
 
+import six
 import should_be.all  # noqa
 
 import gssapi.raw as gb
 import gssapi.raw.misc as gbmisc
 import k5test.unit as ktu
 import k5test as kt
+
+if six.PY2:
+    from collections import Set
+else:
+    from collections.abc import Set
 
 
 TARGET_SERVICE_NAME = b'host'
@@ -355,7 +360,7 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         mech_type.should_be(gb.MechType.kerberos)
 
         flags.shouldnt_be_none()
-        flags.should_be_a(collections.Set)
+        flags.should_be_a(Set)
         flags.shouldnt_be_empty()
 
         local_est.should_be_a(bool)
@@ -651,27 +656,25 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         mechs.should_be_a(set)
         mechs.shouldnt_be_empty()
 
-        # We need last_attr to be an attribute on last_mech.
-        # Since mechs is of type set and thus not indexable, these
-        # are used to track the last visited mech for testing
-        # purposes, and saves a call to inquire_attrs_for_mech().
-        last_attr = None
-        last_mech = None
+        # We're validating RFC 5587 here: by iterating over all mechanisms,
+        # we can query their attributes and build a mapping of attr->{mechs}.
+        # To test indicate_mechs_by_attrs, we can use this mapping and
+        # ensure that, when the attribute is placed in a slot, we get the
+        # expected result (e.g., attr in have --> mechs are present).
+        attrs_dict = {}
+        known_attrs_dict = {}
 
         for mech in mechs:
             mech.shouldnt_be_none()
             mech.should_be_a(gb.OID)
-            last_mech = mech
 
             inquire_out = gb.inquire_attrs_for_mech(mech)
             mech_attrs = inquire_out.mech_attrs
             known_mech_attrs = inquire_out.known_mech_attrs
 
             mech_attrs.should_be_a(set)
-            mech_attrs.shouldnt_be_empty()
 
             known_mech_attrs.should_be_a(set)
-            known_mech_attrs.shouldnt_be_empty()
 
             # Verify that we get data for every available
             # attribute. Testing the contents of a few known
@@ -688,7 +691,9 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
                 display_out.short_desc.should_be_a(bytes)
                 display_out.long_desc.should_be_a(bytes)
 
-                last_attr = mech_attr
+                if mech_attr not in attrs_dict:
+                    attrs_dict[mech_attr] = set()
+                attrs_dict[mech_attr].add(mech)
 
             for mech_attr in known_mech_attrs:
                 mech_attr.shouldnt_be_none()
@@ -702,18 +707,27 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
                 display_out.short_desc.should_be_a(bytes)
                 display_out.long_desc.should_be_a(bytes)
 
-        attrs = set([last_attr])
+                if mech_attr not in known_attrs_dict:
+                    known_attrs_dict[mech_attr] = set()
+                known_attrs_dict[mech_attr].add(mech)
 
-        mechs = gb.indicate_mechs_by_attrs(attrs, None, None)
-        mechs.shouldnt_be_empty()
-        mechs.should_include(last_mech)
+        for attr, expected_mechs in attrs_dict.items():
+            attrs = set([attr])
 
-        mechs = gb.indicate_mechs_by_attrs(None, attrs, None)
-        mechs.shouldnt_include(last_mech)
+            mechs = gb.indicate_mechs_by_attrs(attrs, None, None)
+            mechs.shouldnt_be_empty()
+            mechs.should_be(expected_mechs)
 
-        mechs = gb.indicate_mechs_by_attrs(None, None, attrs)
-        mechs.shouldnt_be_empty()
-        mechs.should_include(last_mech)
+            mechs = gb.indicate_mechs_by_attrs(None, attrs, None)
+            for expected_mech in expected_mechs:
+                mechs.shouldnt_include(expected_mech)
+
+        for attr, expected_mechs in known_attrs_dict.items():
+            attrs = set([attr])
+
+            mechs = gb.indicate_mechs_by_attrs(None, None, attrs)
+            mechs.shouldnt_be_empty()
+            mechs.should_be(expected_mechs)
 
     @ktu.gssapi_extension_test('rfc5587', 'RFC 5587')
     def test_display_mech_attr(self):
@@ -749,16 +763,81 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
             out_mn = out.mech_name
             out_mn.shouldnt_be_none()
             out_mn.should_be_a(bytes)
-            out_mn.shouldnt_be_empty()
 
             out_md = out.mech_description
             out_md.shouldnt_be_none()
             out_md.should_be_a(bytes)
-            out_md.shouldnt_be_empty()
 
             cmp_mech = gb.inquire_mech_for_saslname(out_smn)
             cmp_mech.shouldnt_be_none()
             cmp_mech.should_be(mech)
+
+    @ktu.gssapi_extension_test('rfc4178', 'Negotiation Mechanism')
+    def test_set_neg_mechs(self):
+        all_mechs = gb.indicate_mechs()
+        spnego_mech = gb.OID.from_int_seq("1.3.6.1.5.5.2")
+        krb5_mech = gb.OID.from_int_seq("1.2.840.113554.1.2.2")
+        ntlm_mech = gb.OID.from_int_seq("1.3.6.1.4.1.311.2.2.10")
+
+        server_name = gb.import_name(TARGET_SERVICE_NAME,
+                                     gb.NameType.hostbased_service)
+
+        username = gb.import_name(name=b"user",
+                                  name_type=gb.NameType.user)
+        krb5_client_creds = gb.acquire_cred(
+                                None, usage='initiate',
+                                mechs=[krb5_mech, spnego_mech]).creds
+        try:
+            ntlm_client_creds = gb.acquire_cred_with_password(
+                                name=username,
+                                password=b'password',
+                                mechs=[ntlm_mech, spnego_mech]).creds
+        except gb.GSSError:
+            self.skipTest('You do not have the GSSAPI gss-ntlmssp mech '
+                          'installed')
+
+        server_creds = gb.acquire_cred(server_name, usage='accept',
+                                       mechs=all_mechs).creds
+
+        neg_resp = gb.set_neg_mechs(server_creds, [ntlm_mech])
+        neg_resp.should_be_none()
+
+        client_ctx_resp = gb.init_sec_context(server_name,
+                                              creds=ntlm_client_creds,
+                                              mech=spnego_mech)
+        client_token = client_ctx_resp.token
+
+        server_ctx_resp = gb.accept_sec_context(client_token,
+                                                acceptor_creds=server_creds)
+        server_ctx_resp.shouldnt_be_none()
+
+        client_ctx_resp = gb.init_sec_context(server_name,
+                                              creds=krb5_client_creds,
+                                              mech=spnego_mech)
+        client_token = client_ctx_resp.token
+
+        gb.accept_sec_context.should_raise(gb.GSSError, client_token,
+                                           acceptor_creds=server_creds)
+
+        neg_resp = gb.set_neg_mechs(server_creds, [krb5_mech])
+        neg_resp.should_be_none()
+
+        client_ctx_resp = gb.init_sec_context(server_name,
+                                              creds=krb5_client_creds,
+                                              mech=spnego_mech)
+        client_token = client_ctx_resp.token
+
+        server_ctx_resp = gb.accept_sec_context(client_token,
+                                                acceptor_creds=server_creds)
+        server_ctx_resp.shouldnt_be_none()
+
+        client_ctx_resp = gb.init_sec_context(server_name,
+                                              creds=ntlm_client_creds,
+                                              mech=spnego_mech)
+        client_token = client_ctx_resp.token
+
+        gb.accept_sec_context.should_raise(gb.GSSError, client_token,
+                                           acceptor_creds=server_creds)
 
     @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
     @ktu.gssapi_extension_test('s4u', 'S4U')
@@ -846,6 +925,85 @@ class TestBaseUtilities(_GSSAPIKerberosTestCase):
         invalid_oid = gb.OID.from_int_seq("1.2.3.4.5.6.7.8.9")
         gb.inquire_sec_context_by_oid.should_raise(gb.GSSError, client_ctx,
                                                    invalid_oid)
+
+    @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
+    @ktu.gssapi_extension_test('password', 'Add Credential with Password')
+    def test_set_sec_context_option(self):
+        ntlm_mech = gb.OID.from_int_seq("1.3.6.1.4.1.311.2.2.10")
+        username = gb.import_name(name=b"user",
+                                  name_type=gb.NameType.user)
+        try:
+            cred = gb.acquire_cred_with_password(name=username,
+                                                 password=b"password",
+                                                 mechs=[ntlm_mech])
+        except gb.GSSError:
+            self.skipTest('You do not have the GSSAPI gss-ntlmssp mech '
+                          'installed')
+
+        server = gb.import_name(name=b"server",
+                                name_type=gb.NameType.hostbased_service)
+        orig_context = gb.init_sec_context(server, creds=cred.creds,
+                                           mech=ntlm_mech)[0]
+
+        # GSS_NTLMSSP_RESET_CRYPTO_OID_STRING
+        reset_mech = gb.OID.from_int_seq("1.3.6.1.4.1.7165.655.1.3")
+        out_context = gb.set_sec_context_option(reset_mech,
+                                                context=orig_context,
+                                                value=b"\x00" * 4)
+        out_context.should_be_a(gb.SecurityContext)
+
+    @ktu.gssapi_extension_test('ggf', 'Global Grid Forum')
+    @ktu.gssapi_extension_test('password', 'Add Credential with Password')
+    def test_set_sec_context_option_fail(self):
+        ntlm_mech = gb.OID.from_int_seq("1.3.6.1.4.1.311.2.2.10")
+        username = gb.import_name(name=b"user",
+                                  name_type=gb.NameType.user)
+        try:
+            cred = gb.acquire_cred_with_password(name=username,
+                                                 password=b"password",
+                                                 mechs=[ntlm_mech])
+        except gb.GSSError:
+            self.skipTest('You do not have the GSSAPI gss-ntlmssp mech '
+                          'installed')
+
+        server = gb.import_name(name=b"server",
+                                name_type=gb.NameType.hostbased_service)
+        context = gb.init_sec_context(server, creds=cred.creds,
+                                      mech=ntlm_mech)[0]
+
+        # GSS_NTLMSSP_RESET_CRYPTO_OID_STRING
+        reset_mech = gb.OID.from_int_seq("1.3.6.1.4.1.7165.655.1.3")
+
+        # will raise a GSSError if no data was passed in
+        gb.set_sec_context_option.should_raise(gb.GSSError, reset_mech,
+                                               context)
+
+    @ktu.gssapi_extension_test('set_cred_opt', 'Kitten Set Credential Option')
+    @ktu.krb_minversion_test('1.14',
+                             'GSS_KRB5_CRED_NO_CI_FLAGS_X was added in MIT '
+                             'krb5 1.14')
+    def test_set_cred_option(self):
+        name = gb.import_name(SERVICE_PRINCIPAL,
+                              gb.NameType.kerberos_principal)
+        # GSS_KRB5_CRED_NO_CI_FLAGS_X
+        no_ci_flags_x = gb.OID.from_int_seq("1.2.752.43.13.29")
+        orig_cred = gb.acquire_cred(name).creds
+
+        # nothing much we can test here apart from it doesn't fail and the
+        # id of the return cred is the same as the input one
+        output_cred = gb.set_cred_option(no_ci_flags_x, creds=orig_cred)
+        output_cred.should_be_a(gb.Creds)
+
+    @ktu.gssapi_extension_test('set_cred_opt', 'Kitten Set Credential Option')
+    def test_set_cred_option_should_raise_error(self):
+        name = gb.import_name(SERVICE_PRINCIPAL,
+                              gb.NameType.kerberos_principal)
+        orig_cred = gb.acquire_cred(name).creds
+
+        # this is a fake OID and shouldn't work at all
+        invalid_oid = gb.OID.from_int_seq("1.2.3.4.5.6.7.8.9")
+        gb.set_cred_option.should_raise(gb.GSSError, invalid_oid, orig_cred,
+                                        b"\x00")
 
 
 class TestIntEnumFlagSet(unittest.TestCase):
@@ -1009,7 +1167,7 @@ class TestInitContext(_GSSAPIKerberosTestCase):
 
         out_mech_type.should_be(gb.MechType.kerberos)
 
-        out_req_flags.should_be_a(collections.Set)
+        out_req_flags.should_be_a(Set)
         out_req_flags.should_be_at_least_length(2)
 
         out_token.shouldnt_be_empty()
@@ -1064,7 +1222,7 @@ class TestAcceptContext(_GSSAPIKerberosTestCase):
 
         out_token.shouldnt_be_empty()
 
-        out_req_flags.should_be_a(collections.Set)
+        out_req_flags.should_be_a(Set)
         out_req_flags.should_be_at_least_length(2)
 
         out_ttl.should_be_greater_than(0)
@@ -1092,7 +1250,7 @@ class TestAcceptContext(_GSSAPIKerberosTestCase):
 
         out_token.shouldnt_be_empty()
 
-        out_req_flags.should_be_a(collections.Set)
+        out_req_flags.should_be_a(Set)
         out_req_flags.should_be_at_least_length(2)
 
         out_ttl.should_be_greater_than(0)
