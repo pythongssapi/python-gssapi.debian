@@ -19,7 +19,6 @@ Package: python3-gssapi
 Architecture: any
 Depends: ${python3:Depends}, ${shlibs:Depends}, ${misc:Depends}
 Provides: ${python3:Provides}
-Suggests: python-gssapi-doc
 Description: Python 3 interface to GSSAPI
  Python3 Bindings for GSSAPI.  These bindings are for both RFC 2743/2744 and
  many extensions.  They are native bindings produced using Cython.
