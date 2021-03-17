@@ -37,8 +37,10 @@ def get_output(*args, **kwargs):
 
 
 # get the compile and link args
+kc = "krb5-config"
+posix = os.name != 'nt'
 link_args, compile_args = [
-    shlex.split(os.environ[e]) if e in os.environ else None
+    shlex.split(os.environ[e], posix=posix) if e in os.environ else None
     for e in ['GSSAPI_LINKER_ARGS', 'GSSAPI_COMPILER_ARGS']
 ]
 
@@ -70,6 +72,26 @@ if os.name == 'nt':
     except ValueError:
         cygwinccompiler.get_msvcr = lambda *a, **kw: []
 
+if sys.platform.startswith("freebsd"):
+    # FreeBSD does $PATH backward, for our purposes.  That is, the package
+    # manager's version of the software is in /usr/local, which is in PATH
+    # *after* the version in /usr.  We prefer the package manager's version
+    # because the Heimdal in base is truly ancient, but this can be overridden
+    # - either in the "normal" fashion by putting something in PATH in front
+    # of it, or by removing /usr/local from PATH.
+
+    bins = []
+    for b in os.environ["PATH"].split(":"):
+        p = f"{b}/krb5-config"
+        if not os.path.exists(p):
+            continue
+        bins.append(p)
+
+    if len(bins) > 1 and bins[0] == "/usr/bin/krb5-config" and \
+       "/usr/local/bin/krb5-config" in bins:
+        kc = "/usr/local/bin/krb5-config"
+    print(f"Detected: {kc}")
+
 if link_args is None:
     if osx_has_gss_framework:
         link_args = ['-framework', 'GSS']
@@ -84,7 +106,7 @@ if link_args is None:
     elif os.environ.get('MINGW_PREFIX'):
         link_args = ['-lgss']
     else:
-        link_args = shlex.split(get_output('krb5-config --libs gssapi'))
+        link_args = shlex.split(get_output(f"{kc} --libs gssapi"))
 
 if compile_args is None:
     if osx_has_gss_framework:
@@ -97,14 +119,14 @@ if compile_args is None:
     elif os.environ.get('MINGW_PREFIX'):
         compile_args = ['-fPIC']
     else:
-        compile_args = shlex.split(get_output('krb5-config --cflags gssapi'))
+        compile_args = shlex.split(get_output(f"{kc} --cflags gssapi"))
 
 # add in the extra workarounds for different include structures
 if winkrb_path:
     prefix = winkrb_path
 else:
     try:
-        prefix = get_output('krb5-config gssapi --prefix')
+        prefix = get_output(f"{kc} gssapi --prefix")
     except Exception:
         print("WARNING: couldn't find krb5-config; assuming prefix of %s"
               % str(sys.prefix))
@@ -140,6 +162,14 @@ if ENABLE_SUPPORT_DETECTION:
     main_path = ""
     if main_lib is None and osx_has_gss_framework:
         main_lib = ctypes.util.find_library('GSS')
+        if not main_lib:
+            # https://github.com/pythongssapi/python-gssapi/issues/235
+            # CPython has a bug on Big Sur where find_library will fail to
+            # find the library path of shared frameworks.  This has been fixed
+            # in newer versions but we have this fallback in case an older
+            # version is still in use.  This fix is expected to be included in
+            # 3.8.8 and 3.9.2.
+            main_lib = '/System/Library/Frameworks/GSS.framework/GSS'
     elif os.environ.get('MINGW_PREFIX'):
         main_lib = os.environ.get('MINGW_PREFIX')+'/bin/libgss-3.dll'
     elif sys.platform == 'msys':
@@ -164,11 +194,16 @@ if ENABLE_SUPPORT_DETECTION:
             # To support Heimdal on Debian, read the linker path.
             if opt.startswith('-Wl,/'):
                 main_path = opt[4:] + "/"
+        if main_path == "":
+            for d in library_dirs:
+                if os.path.exists(os.path.join(d, main_lib)):
+                    main_path = d
+                    break
 
     if main_lib is None:
         raise Exception("Could not find main GSSAPI shared library.  Please "
                         "try setting GSSAPI_MAIN_LIB yourself or setting "
-                        "ENABLE_SUPPORT_DETECTION to 'false'")
+                        "GSSAPI_SUPPORT_DETECT to 'false'")
 
     GSSAPI_LIB = ctypes.CDLL(os.path.join(main_path, main_lib))
 
@@ -288,28 +323,28 @@ long_desc = re.sub(r'\.\. role:: \w+\(code\)\s*\n\s*.+', '',
 
 install_requires = [
     'decorator',
-    'six >= 1.4.0'
 ]
-if sys.version_info < (3, 4):
-    install_requires.append('enum34')
 
 setup(
     name='gssapi',
-    version='1.6.1',
+    version='1.6.12',
     author='The Python GSSAPI Team',
-    author_email='sross@redhat.com',
+    author_email='rharwood@redhat.com',
     packages=['gssapi', 'gssapi.raw', 'gssapi.raw._enum_extensions',
               'gssapi.tests'],
     description='Python GSSAPI Wrapper',
     long_description=long_desc,
     license='LICENSE.txt',
     url="https://github.com/pythongssapi/python-gssapi",
+    python_requires=">=3.6.*",
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: ISC License (ISCL)',
         'Programming Language :: Python :: Implementation :: CPython',

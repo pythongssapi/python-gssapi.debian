@@ -1,1 +1,1 @@
-python-gssapi-1.6.1/README.txt
+./README.txt

@@ -8,9 +8,6 @@ Python-GSSAPI
 .. role:: bash(code)
    :language: bash
 
-.. image:: https://travis-ci.org/pythongssapi/python-gssapi.svg?branch=master
-    :target: https://travis-ci.org/pythongssapi/python-gssapi
-
 .. image:: https://badge.fury.io/gh/pythongssapi%2Fpython-gssapi.svg
     :target: http://badge.fury.io/gh/pythongssapi%2Fpython-gssapi
 
@@ -25,7 +22,7 @@ Documentation for the latest released version (including pre-release versions)
 can be found at
 `https://pythongssapi.github.io/python-gssapi/stable <https://pythongssapi.github.io/python-gssapi/stable>`_.
 
-Documentation for the latest commit on master can be found at
+Documentation for the latest commit on main can be found at
 `https://pythongssapi.github.io/python-gssapi/latest <https://pythongssapi.github.io/python-gssapi/latest>`_.
 
 Requirements
@@ -35,13 +32,13 @@ Basic
 -----
 
 * A working implementation of GSSAPI (such as from MIT Kerberos)
-  which includes header files
+  which supports delegation and includes header files
 
 * a C compiler (such as GCC)
 
-* either the `enum34` Python package or Python 3.4+
+* Python 3.6+ (older releases support older versions, but are unsupported)
 
-* the `six` and `decorator` python packages
+* the `decorator` python package
 
 Compiling from Scratch
 ----------------------
@@ -51,9 +48,7 @@ To compile from scratch, you will need Cython >= 0.21.1.
 For Running the Tests
 ---------------------
 
-* the `nose` package (for tests)
-
-* the `shouldbe` package (for tests)
+* the `nose` package
 
 * the `k5test` package
 
@@ -171,10 +166,10 @@ The Team
 
 (GitHub usernames in parentheses)
 
-* Solly Ross (@directxman12)
-* Robbie Harwood (@frozencemetery)
-* Simo Sorce (@simo5)
-* Hugh Cole-Baker (@sigmaris)
+* Robbie Harwood (@frozencemetery) - current maintainer and developer
+* Simo Sorce (@simo5) - developer
+* Solly Ross (@directxman12) - author emeritus
+* Hugh Cole-Baker (@sigmaris) - author emeritus
 
 Get Involved
 ============

@@ -11,12 +11,8 @@ import collections
 import copy
 import numbers
 import operator
-import six
 
-if six.PY2:
-    from collections import MutableSet
-else:
-    from collections.abc import MutableSet
+from collections.abc import MutableSet
 
 
 class NameType(object):
@@ -60,6 +56,11 @@ class RequirementFlag(IntEnum, metaclass=ExtendableEnum):
     anonymity = GSS_C_ANON_FLAG
     protection_ready = GSS_C_PROT_READY_FLAG
     transferable = GSS_C_TRANS_FLAG
+
+    # GSS_C_DELEG_POLICY_FLAG.  cython can't do compile-time detection of
+    # this, so take the value from RFC 5896.  Implementations that don't
+    # support it will ignore it.
+    ok_as_delegate = 32768
 
 
 class AddressType(IntEnum, metaclass=ExtendableEnum):
