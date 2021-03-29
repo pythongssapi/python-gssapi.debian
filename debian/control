@@ -6,7 +6,7 @@ Uploaders: Timo Aaltonen <tjaalton@debian.org>
 Standards-Version: 4.5.1
 Homepage: https://github.com/pythongssapi/python-gssapi
 Build-Depends: cython3,
-               debhelper (>= 13), dh-python,
+               debhelper-compat (>= 13), dh-python,
                python3-all-dev,
                python3-setuptools,
                python3-flake8,
